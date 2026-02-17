@@ -27,15 +27,20 @@ This is more efficient, scalable, and suitable for real-time dashboards.
 
 # Project Structure
 
+```
 ├── realtime-demo/ # Go backend (MQTT subscriber + WebSocket server)
+|
 ├── realtime-ui/ # React Router frontend (WebSocket client + UI)
+|
 └── README.md
+```
 
 
 ---
 
 # Architecture Overview
 
+```
 MQTT Publisher
 ↓
 Mosquitto Broker (localhost:1883)
@@ -45,8 +50,7 @@ Go Backend (realtime-demo)
 WebSocket (ws://localhost:8080/ws)
 ↓
 React UI (realtime-ui)
-
-
+```
 - MQTT carries battery metrics.
 - Go backend subscribes to MQTT.
 - Backend enriches data (calculates charging/discharging state).
@@ -60,44 +64,55 @@ React UI (realtime-ui)
 Make sure the following are installed:
 
 ### 1. Go
+```bash
 go version
+```
 
 
 ### 2. Node.js (v18+ recommended)
+```bash
 node -v
+```
 
 
 ### 3. Mosquitto (MQTT Broker)
 
 Install on Ubuntu:
+```bash
 sudo apt install mosquitto mosquitto-clients
+```
 
 Check if running:
+```bash
 sudo systemctl status mosquitto
+```
 
 If not running:
+```bash
 sudo systemctl start mosquitto
-
-
+```
 
 ---
 
 # How to Run the Backend (realtime-demo)
 
 Navigate to backend folder:
-
+```bash
 cd realtime-demo
-
+```
 Install dependencies (first time only):
+```bash
 go mod tidy
-
+```
 
 Run server:
+```bash
 go run main.go
-
-
+```
 You should see:
+```
 Server running on :8080
+```
 
 
 The backend will:
@@ -114,13 +129,19 @@ The backend will:
 Open a new terminal.
 
 Navigate to frontend:
+```bash
 cd realtime-ui
+```
 
 Install dependencies (first time only):
+```bash
 npm install
+```
 
 Start development server:
+```bash
 npm run dev
+```
 
 Open browser: http://localhost:5173
 
@@ -136,9 +157,9 @@ Open another terminal.
 
 Battery Power > 0 means Charging.
 
+```bash
 mosquitto_pub -h localhost -t battery/topic -m '{"batteryPercent": 80, "batteryPower": 1200}'
-
-
+```
 UI should show:
 - 80%
 - Charging
@@ -149,10 +170,9 @@ UI should show:
 
 Battery Power < 0 means Discharging.
 
+```bash
 mosquitto_pub -h localhost -t battery/topic -m '{"batteryPercent": 40, "batteryPower": -900}'
-
-
-
+```
 UI should show:
 - 40%
 - Discharging
@@ -163,21 +183,14 @@ UI should show:
 
 To confirm messages on the topic:
 
-UI should show:
-- 40%
-- Discharging
-
----
-
-## Verify MQTT Messages Being Published
-
-To confirm messages on the topic:
-
+```bash
 mosquitto_sub -h localhost -t battery/topic
+```
 
 Then publish again:
+```bash
 mosquitto_pub -h localhost -t battery/topic -m '{"batteryPercent": 55, "batteryPower": -700}'
-
+```
 
 You should see the JSON appear in the subscriber terminal.
 
