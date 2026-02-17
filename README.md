@@ -22,7 +22,6 @@ MQTT → Go Backend → WebSocket → UI
 
 This is more efficient, scalable, and suitable for real-time dashboards.
 
-
 ---
 
 # Project Structure
@@ -34,7 +33,6 @@ This is more efficient, scalable, and suitable for real-time dashboards.
 |
 └── README.md
 ```
-
 
 ---
 
@@ -51,6 +49,7 @@ WebSocket (ws://localhost:8080/ws)
 ↓
 React UI (realtime-ui)
 ```
+
 - MQTT carries battery metrics.
 - Go backend subscribes to MQTT.
 - Backend enriches data (calculates charging/discharging state).
@@ -64,30 +63,33 @@ React UI (realtime-ui)
 Make sure the following are installed:
 
 ### 1. Go
+
 ```bash
 go version
 ```
 
-
 ### 2. Node.js (v18+ recommended)
+
 ```bash
 node -v
 ```
 
-
 ### 3. Mosquitto (MQTT Broker)
 
 Install on Ubuntu:
+
 ```bash
 sudo apt install mosquitto mosquitto-clients
 ```
 
 Check if running:
+
 ```bash
 sudo systemctl status mosquitto
 ```
 
 If not running:
+
 ```bash
 sudo systemctl start mosquitto
 ```
@@ -97,30 +99,34 @@ sudo systemctl start mosquitto
 # How to Run the Backend (realtime-demo)
 
 Navigate to backend folder:
+
 ```bash
 cd realtime-demo
 ```
+
 Install dependencies (first time only):
+
 ```bash
 go mod tidy
 ```
 
 Run server:
+
 ```bash
 go run main.go
 ```
+
 You should see:
+
 ```
 Server running on :8080
 ```
-
 
 The backend will:
 
 - Connect to MQTT at `tcp://localhost:1883`
 - Subscribe to topic: `battery/topic`
 - Open WebSocket server at: `ws://localhost:8080/ws`
-  
 
 ---
 
@@ -129,16 +135,19 @@ The backend will:
 Open a new terminal.
 
 Navigate to frontend:
+
 ```bash
 cd realtime-ui
 ```
 
 Install dependencies (first time only):
+
 ```bash
 npm install
 ```
 
 Start development server:
+
 ```bash
 npm run dev
 ```
@@ -158,9 +167,11 @@ Open another terminal.
 Battery Power > 0 means Charging.
 
 ```bash
-mosquitto_pub -h localhost -t battery/topic -m '{"batteryPercent": 80, "batteryPower": 1200}'
+mosquitto_pub -h localhost -t battery/topic -m '{"userId": "user-1","batteryPercent": 80, "batteryPower": 1200}'
 ```
+
 UI should show:
+
 - 80%
 - Charging
 
@@ -171,9 +182,11 @@ UI should show:
 Battery Power < 0 means Discharging.
 
 ```bash
-mosquitto_pub -h localhost -t battery/topic -m '{"batteryPercent": 40, "batteryPower": -900}'
+mosquitto_pub -h localhost -t battery/topic -m '{"userId": "user-1","batteryPercent": 40, "batteryPower": -900}'
 ```
+
 UI should show:
+
 - 40%
 - Discharging
 
@@ -188,8 +201,9 @@ mosquitto_sub -h localhost -t battery/topic
 ```
 
 Then publish again:
+
 ```bash
-mosquitto_pub -h localhost -t battery/topic -m '{"batteryPercent": 55, "batteryPower": -700}'
+mosquitto_pub -h localhost -t battery/topic -m '{"userId": "user-1","batteryPercent": 55, "batteryPower": -700}'
 ```
 
 You should see the JSON appear in the subscriber terminal.
@@ -250,4 +264,3 @@ This repository demonstrates a clean, modern real-time architecture:
 MQTT → Go → WebSocket → React
 
 It serves as a foundation for replacing database-driven real-time polling with a true streaming approach.
-
