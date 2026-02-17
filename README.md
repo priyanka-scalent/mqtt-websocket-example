@@ -34,7 +34,7 @@ This is more efficient, scalable, and suitable for real-time dashboards.
 
 ---
 
-# 🏗 Architecture Overview
+# Architecture Overview
 
 MQTT Publisher
 ↓
@@ -55,7 +55,7 @@ React UI (realtime-ui)
 
 ---
 
-# 📦 Prerequisites
+# Prerequisites
 
 Make sure the following are installed:
 
@@ -132,7 +132,7 @@ You should see the Realtime Battery UI.
 
 Open another terminal.
 
-## 🔋 Send Charging Data
+## Send Charging Data
 
 Battery Power > 0 means Charging.
 
