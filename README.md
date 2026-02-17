@@ -67,7 +67,7 @@ go version
 node -v
 
 
-### 3️⃣ Mosquitto (MQTT Broker)
+### 3. Mosquitto (MQTT Broker)
 
 Install on Ubuntu:
 sudo apt install mosquitto mosquitto-clients
