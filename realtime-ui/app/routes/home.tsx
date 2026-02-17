@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useParams } from "react-router";
 
 type BatteryData = {
   batteryPercent: number;
@@ -9,34 +10,41 @@ type BatteryData = {
 export default function Home() {
   const [battery, setBattery] = useState<BatteryData | null>(null);
   const [connected, setConnected] = useState(false);
+  const { userId } = useParams();
 
-  useEffect(() => {
-    let ws: WebSocket;
 
-    function connect() {
-      ws = new WebSocket("ws://localhost:8080/ws");
+useEffect(() => {
+  if (!userId) return;
 
-      ws.onopen = () => {
-        setConnected(true);
-        console.log("WebSocket Connected");
-      };
+  let ws: WebSocket;
 
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        setBattery(data);
-      };
+  function connect() {
+    ws = new WebSocket(
+      `ws://localhost:8080/ws?userId=${userId}`
+    );
 
-      ws.onclose = () => {
-        setConnected(false);
-        console.log("Reconnecting...");
-        setTimeout(connect, 2000);
-      };
-    }
+    ws.onopen = () => {
+      setConnected(true);
+      console.log("WebSocket Connected for", userId);
+    };
 
-    connect();
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      setBattery(data);
+    };
 
-    return () => ws?.close();
-  }, []);
+    ws.onclose = () => {
+      setConnected(false);
+      console.log("Reconnecting...");
+      setTimeout(connect, 2000);
+    };
+  }
+
+  connect();
+
+  return () => ws?.close();
+}, [userId]);
+
 
   return (
     <div className="min-h-screen bg-slate-100 flex items-center justify-center">
@@ -82,4 +90,11 @@ export default function Home() {
       </div>
     </div>
   );
+}
+
+export async function loader({ params }: { params: { userId?: string } }) {
+  const id = params.userId ?? "";
+  if (!["user-1", "user-2", "user-3"].includes(id)) {
+    throw new Response("Not Found", { status: 404 });
+  }
 }

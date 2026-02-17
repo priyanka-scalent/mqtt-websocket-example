@@ -11,6 +11,7 @@ import (
 )
 
 type BatteryMessage struct {
+	UserID         string  `json:"userId"`
 	BatteryPercent int     `json:"batteryPercent"`
 	BatteryPower   float64 `json:"batteryPower"`
 	State          string  `json:"state"`
@@ -20,7 +21,7 @@ var (
 	upgrader = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool { return true },
 	}
-	clients   = make(map[*websocket.Conn]bool)
+	clients   = make(map[string]map[*websocket.Conn]bool)
 	clientsMu sync.Mutex
 )
 
@@ -64,31 +65,42 @@ func mqttHandler(client mqtt.Client, msg mqtt.Message) {
 		data.State = "Idle"
 	}
 
-	broadcast(data)
+	sendToUser(data)
 }
 
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {
+	userID := r.URL.Query().Get("userId")
+	if userID == "" {
+		http.Error(w, "userId required", http.StatusBadRequest)
+		return
+	}
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return
 	}
 
 	clientsMu.Lock()
-	clients[conn] = true
+	if clients[userID] == nil {
+		clients[userID] = make(map[*websocket.Conn]bool)
+	}
+	clients[userID][conn] = true
 	clientsMu.Unlock()
 
-	log.Println("Client connected")
+	log.Println("Client connected", userID)
 }
 
-func broadcast(data BatteryMessage) {
+func sendToUser(data BatteryMessage) {
 	clientsMu.Lock()
 	defer clientsMu.Unlock()
 
-	for client := range clients {
+	userClients := clients[data.UserID]
+
+	for client := range userClients {
 		err := client.WriteJSON(data)
 		if err != nil {
 			client.Close()
-			delete(clients, client)
+			delete(userClients, client)
 		}
 	}
 }
