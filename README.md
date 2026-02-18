@@ -250,7 +250,6 @@ This architecture can now be applied to:
 
 # Next Possible Improvements
 
-- Add multi-site support
 - Add authentication to WebSocket
 - Add reconnect handling improvements
 - Add real-time charts
