@@ -10,22 +10,30 @@ type BatteryData = {
 export default function Home() {
   const [battery, setBattery] = useState<BatteryData | null>(null);
   const [connected, setConnected] = useState(false);
-  const { userId } = useParams();
+const { siteId, screen } = useParams();
 
 
 useEffect(() => {
-  if (!userId) return;
+  if (!siteId || !screen) return;
 
   let ws: WebSocket;
 
   function connect() {
-    ws = new WebSocket(
-      `ws://localhost:8080/ws?userId=${userId}`
-    );
+    ws = new WebSocket("ws://localhost:8080/ws");
 
     ws.onopen = () => {
       setConnected(true);
-      console.log("WebSocket Connected for", userId);
+
+      // Send subscription message
+      ws.send(
+        JSON.stringify({
+          action: "subscribe",
+          siteId,
+          screen,
+        })
+      );
+
+      console.log("Subscribed to", siteId, screen);
     };
 
     ws.onmessage = (event) => {
@@ -35,7 +43,6 @@ useEffect(() => {
 
     ws.onclose = () => {
       setConnected(false);
-      console.log("Reconnecting...");
       setTimeout(connect, 2000);
     };
   }
@@ -43,7 +50,8 @@ useEffect(() => {
   connect();
 
   return () => ws?.close();
-}, [userId]);
+}, [siteId, screen]);
+
 
 
   return (

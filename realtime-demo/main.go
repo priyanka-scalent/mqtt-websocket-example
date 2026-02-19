@@ -11,10 +11,16 @@ import (
 )
 
 type BatteryMessage struct {
-	UserID         string  `json:"userId"`
+	SiteID         string  `json:"siteId"`
 	BatteryPercent int     `json:"batteryPercent"`
 	BatteryPower   float64 `json:"batteryPower"`
 	State          string  `json:"state"`
+}
+
+type SubscribeMessage struct {
+	Action string `json:"action"`
+	SiteID string `json:"siteId"`
+	Screen string `json:"screen"`
 }
 
 var (
@@ -65,42 +71,89 @@ func mqttHandler(client mqtt.Client, msg mqtt.Message) {
 		data.State = "Idle"
 	}
 
-	sendToUser(data)
+	sendToTopic(data)
 }
 
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {
-	userID := r.URL.Query().Get("userId")
-	if userID == "" {
-		http.Error(w, "userId required", http.StatusBadRequest)
-		return
-	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return
 	}
 
-	clientsMu.Lock()
-	if clients[userID] == nil {
-		clients[userID] = make(map[*websocket.Conn]bool)
-	}
-	clients[userID][conn] = true
-	clientsMu.Unlock()
+	log.Println("Client connected")
 
-	log.Println("Client connected", userID)
+	go func() {
+		defer func() {
+			removeConnection(conn)
+			conn.Close()
+		}()
+
+		for {
+			_, message, err := conn.ReadMessage()
+			if err != nil {
+				break
+			}
+
+			var subMsg SubscribeMessage
+			err = json.Unmarshal(message, &subMsg)
+			if err != nil {
+				continue
+			}
+
+			if subMsg.Action == "subscribe" {
+				topic := buildTopic(subMsg.SiteID, subMsg.Screen)
+
+				clientsMu.Lock()
+
+				// Since we allow only ONE subscription per connection,
+				// first remove it from any previous topics
+				removeConnection(conn)
+
+				if clients[topic] == nil {
+					clients[topic] = make(map[*websocket.Conn]bool)
+				}
+
+				clients[topic][conn] = true
+				clientsMu.Unlock()
+
+				log.Println("Subscribed to", topic)
+			}
+		}
+	}()
 }
 
-func sendToUser(data BatteryMessage) {
+func sendToTopic(data BatteryMessage) {
 	clientsMu.Lock()
 	defer clientsMu.Unlock()
 
-	userClients := clients[data.UserID]
+	topic := buildTopic(data.SiteID, "battery")
+
+	userClients := clients[topic]
 
 	for client := range userClients {
 		err := client.WriteJSON(data)
 		if err != nil {
 			client.Close()
 			delete(userClients, client)
+		}
+	}
+}
+
+func buildTopic(siteID, screen string) string {
+	return siteID + ":" + screen
+}
+func removeConnection(conn *websocket.Conn) {
+	clientsMu.Lock()
+	defer clientsMu.Unlock()
+
+	for topic, conns := range clients {
+		if conns[conn] {
+			delete(conns, conn)
+
+			if len(conns) == 0 {
+				delete(clients, topic)
+			}
 		}
 	}
 }

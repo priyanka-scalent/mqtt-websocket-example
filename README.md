@@ -22,6 +22,7 @@ MQTT → Go Backend → WebSocket → UI
 
 This is more efficient, scalable, and suitable for real-time dashboards.
 
+
 ---
 
 # Project Structure
